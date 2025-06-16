@@ -1,0 +1,592 @@
+{
+  "name": "Build this Automated AI Linkedin lead magnet system in 1 hour (n8n) manoj workflow 2",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "daysInterval": 2,
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -600,
+        -560
+      ],
+      "id": "3318bd38-5572-439c-ac53-3b1b7622b8da",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1EIOjohCLDHQTK9g3TnzYJHjZ1oLsysWw_4_7ggxpB6k",
+          "mode": "list",
+          "cachedResultName": "n8nQaApplication",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1EIOjohCLDHQTK9g3TnzYJHjZ1oLsysWw_4_7ggxpB6k/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1488729431,
+          "mode": "list",
+          "cachedResultName": "LinkedInNewConnection",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1EIOjohCLDHQTK9g3TnzYJHjZ1oLsysWw_4_7ggxpB6k/edit#gid=1488729431"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -540,
+        -200
+      ],
+      "id": "de8fec57-79e7-46cc-ba70-5fa87caa762d",
+      "name": "Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "CmAkoxRketJyyE6c",
+          "name": "PoojaPalSheet"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "function toISO(dateStr) {\n  if (!dateStr) return null;\n  \n  const parts = dateStr.split(\"-\");\n  if (parts.length !== 3) return null;\n\n  if (isNaN(parseInt(parts[0])) || isNaN(parseInt(parts[1])) || isNaN(parseInt(parts[2]))) {\n    return null;\n  }\n  \n  return `${parts[2]}-${parts[1]}-${parts[0]}`;\n}\n\nconst today = new Date().toISOString().split(\"T\")[0];\n\nlet newLead;\nif (item.json) {\n  newLead = JSON.parse(JSON.stringify(item));\n} else {\n  newLead = { json: JSON.parse(JSON.stringify(item)) };\n}\n\nlet followUpKey = \"Next follow up date\";\nif (newLead.json.hasOwnProperty(\"Next Follow Up Date\")) {\n  followUpKey = \"Next Follow Up Date\";\n} else if (newLead.json.hasOwnProperty(\"next follow up date\")) {\n  followUpKey = \"next follow up date\";\n}\n\nconst followUpRaw = newLead.json[followUpKey];\nconst followUpISO = toISO(followUpRaw);\n\n// Check if follow-up date has passed\nif (!followUpISO || followUpISO > today) {\n  return null;\n}\n\n// Get current counter value (default to 0 if not present)\nconst currentCounter = parseInt(newLead.json[\"Counter\"]) || 0;\n\n// If counter is already 3 or more, no more messages to send\nif (currentCounter >= 3) {\n  return null;\n}\n\n// Determine which message to send based on counter value\nlet messageToSend = \"\";\nlet newCounter = currentCounter;\n\nif (currentCounter === 0) {\n  messageToSend = \"lead magnet 1\";\n  newCounter = 1;\n} else if (currentCounter === 1) {\n  messageToSend = \"lead magnet 2\";\n  newCounter = 2;\n} else if (currentCounter === 2) {\n  messageToSend = \"lead magnet 3\";\n  newCounter = 3;\n}\n\n// Set the next message and update counter\nnewLead.json.nextMessage = messageToSend;\nnewLead.json[\"Counter\"] = newCounter;\n\n// Calculate new follow-up date (original date + 2 days)\nconst followUpDate = new Date(followUpISO);\nfollowUpDate.setDate(followUpDate.getDate() + 2);\n\nconst day = String(followUpDate.getDate()).padStart(2, '0');\nconst month = String(followUpDate.getMonth() + 1).padStart(2, '0');\nconst year = followUpDate.getFullYear();\nconst newFollowUpDate = `${day}-${month}-${year}`;\nnewLead.json[\"New Next Follow Up Date\"] = newFollowUpDate;\n\nif (item.json) {\n  return newLead;\n} else {\n  return newLead.json;\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -280,
+        -180
+      ],
+      "id": "3b8f5f2b-9f72-4cac-b231-bc56d39a3ce2",
+      "name": "Code",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4",
+          "mode": "list",
+          "cachedResultName": "GPT-4"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=🎯 Goal: Craft a personalized LinkedIn message based on the lead’s current engagement stage — send only the next relevant message at the right time.\n\n📥 Input Fields:\n\nName: {{ $('Code').item.json.Name }}\n\nRole: {{ $('Google Sheets').item.json.Occupation }}\n\nCompany: {{ $('Phantombuster').item.json.companyName }}\n\nCompany URL: {{ $('Phantombuster').item.json.linkedinCompanyUrl }}\n\nBio: {{ $('Phantombuster').item.json.linkedinHeadline }}\n\nJob Description: {{ $('Phantombuster').item.json.linkedinDescription }}\n\nTop Pain Point: {{ $json.message.content }}\n\nMessage Stage: {{ $('Code').item.json.nextMessage }} — values: \"lead magnet 1\", \"lead magnet 2\", \"lead magnet 3\"\n\n🧠 Task Instructions:\n\nBased on the Message Stage, generate a single, personalized LinkedIn message under 500 characters, using the following logic:\n\nLead Magnet 1: Personalize with name or company, mention their pain point, and offer something genuinely helpful (guide, checklist, or tool).\n\nLead Magnet 2: Acknowledge the previous message, briefly restate the value, and share something new (a tip, video, or resource).\n\nLead Magnet 3: Give a soft, polite reminder. Re-emphasize the value and invite them to connect or opt out if not the right time.\n\n⚠️ Output Rules (Must Follow):\n\nOutput only the message body after that — no formatting, no labels, no greetings like \"Hi\", and no closing name.\n\nKeep tone warm, helpful, and respectful.\n\nAlways end the message with: “Thanks!” ",
+              "role": "system"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        1660,
+        -60
+      ],
+      "id": "d16e758d-2c0d-4fe3-a006-b31f9db8e48d",
+      "name": "OpenAI2",
+      "credentials": {
+        "openAiApi": {
+          "id": "7RtpdWGgonlHFQIK",
+          "name": "AlwaysUsed"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4",
+          "mode": "list",
+          "cachedResultName": "GPT-4"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Act as a LinkedIn Lead Nurturing Expert focused on helping small business owners (with teams under 10) streamline and scale using AI and automation.\n\nInput:\n- Name: {{ $('Phantombuster').item.json.firstName }} {{ $('Phantombuster').item.json.lastName }}\n- Role: {{ $('Phantombuster').item.json.linkedinJobTitle }}\n- Company: {{ $('Phantombuster').item.json.linkedinCompanySlug }}\n- Bio: {{ $('Phantombuster').item.json.linkedinHeadline }}\n- Job Description: {{ $('Phantombuster').item.json.linkedinDescription }}\n\n⚠️ Pain Point (from previous step):\n{{ $json.message.content }}\n\n🎯 Task:\nGiven this person’s role, company context, and their specific pain point, suggest one **highly relevant, bite-sized lead magnet or digital product** that would:\n\n- Directly solve or ease their current pain point\n- Be easy to consume or implement\n- Help them save time or improve productivity instantly\n- Feel personalized and valuable based on their job and business type\n\nExamples:  \n- A Notion-based content calendar for solopreneurs  \n- A Zapier automation checklist for follow-ups  \n- An Airtable CRM template for high-touch clients  \n- A Google Sheets dashboard for tracking leads  \n- A 3-video micro-course on automating onboarding with AI\n\n🛑 Output format:  \nRespond with **only** the lead magnet suggestion — no explanations, headers, or intro text. Make it sound useful, relevant, and enticing.\n\n✅ Output Example:  \n**“Client Follow-Up Automation Blueprint” — a Zapier-based checklist and video guide to automate client responses without hiring a VA.**\n",
+              "role": "system"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        1280,
+        -60
+      ],
+      "id": "15799c5f-3226-4217-8451-1e8395edf2df",
+      "name": "lead magnet",
+      "credentials": {
+        "openAiApi": {
+          "id": "7RtpdWGgonlHFQIK",
+          "name": "AlwaysUsed"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "GPT-4O"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Act as a LinkedIn Lead Nurturing Expert who helps small business owners (with teams under 10) automate and scale operations using automation workflows and AI tools — without hiring more people.\n\nYou are given LinkedIn profile data for a lead:\n\n* Name: {{ $json.firstName }} {{ $json.lastName }}\n* Role: {{ $json.linkedinJobTitle }}\n* Company: {{ $json.companyName }}\n* Bio / Headline: {{ $json.linkedinHeadline }}\n* Job Description: {{ $json.linkedinDescription }}\n* Recent Post or Message Content: {{ $json.content }}\n\n🔍 Your task:\n\n1. Analyze the Role, Bio, and Job Description to infer their **daily responsibilities**, **business model**, and **operational structure**.\n\n2. From the perspective of a small business owner or team lead with <10 employees, write **10 first-person pain points** they are likely facing. These should be practical, emotionally resonant, and directly connected to things like:\n\n- Time constraints  \n- Process inefficiencies  \n- Manual workflows  \n- Hiring limitations  \n- Scaling struggles  \n- Tech overwhelm  \n- Repetitive admin tasks  \n- Lead follow-up gaps  \n- Lack of automation  \n- Constant context switching\n\n⚠️ These must sound like things the person would **actually say or think** — real-world, raw, practical. Don’t use buzzwords or corporate language.\n\n3. Then, identify and output the **#1 pain point** that best aligns with the following value proposition:\n\n> “I help small business owners (teams <10) streamline their work using automation workflows and AI tools to save time, reduce manual effort, and scale without hiring.”\n\n🎯 Output format:\n```json\n{\n  \"pain_points\": [\n    \"I’m constantly switching between tools and can’t focus.\",\n    \"I’m the only one following up on leads, and it’s draining.\",\n    ...\n  ],\n  \"top_pain_point\": \"I waste hours every week on manual, repetitive tasks that I know could be automated — but I don’t have the time to figure it out.\"\n}\n",
+              "role": "system"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        980,
+        -600
+      ],
+      "id": "37aa6b7c-b392-43b5-b792-04ff85c88cf1",
+      "name": "OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "7RtpdWGgonlHFQIK",
+          "name": "AlwaysUsed"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.phantombuster.com/api/v2/agents/launch",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Phantombuster-Key",
+              "value": "=4JbLcAva32LigntGNLRUmHH4VlbHSnFAlSMmggQau80"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"id\": \"1508230107110673\",\n  \"argument\": {\n    \"userAgent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36\",\n    \"identityId\": \"4483091631439715\",\n    \"emailChooser\": \"phantombuster\",\n    \"sessionCookie\": \"AQEFAREBAAAAABVnZngAAAGWZ-j96wAAAZcCd5P8VgAAtHVybjpsaTplbnRlcnByaXNlQXV0aFRva2VuOmVKeGpaQUFDeWR3clRDQmEydko1R29oVzJMdDJFeU9JVVg0Ny9qT1lFZTAxK3pFREl3REM3QW9GXnVybjpsaTplbnRlcnByaXNlUHJvZmlsZToodXJuOmxpOmVudGVycHJpc2VBY2NvdW50OjQyNjYyODA5OCw0NTY3Nzk2MjIpXnVybjpsaTptZW1iZXI6MTQzODE0NzExMiZzabiMEbEIxbLmwZdUarizXKEFPXgqB7NFUNCsx9JVLQfB21FFkhOgvhizDsQ74mpX_DqEchBAXsJF6j4pOa_GW3nfEM_U8bUHTP4jW-lxANokf2yUkU_cvk7CYu-coTzHFWr5VKTwY1Mn-CHUhdC_TE8lfQYxbx8CyfZeBAWPkaF-n5JV0vbwTOKZ4T4PmlVXCEI\",\n    \"spreadsheetUrl\": \"{{ $('Loop Over Items').item.json['LinkedIn URL'] }}\",\n    \"pushResultToCRM\": true,\n    \"enrichWithCompanyData\": true,\n    \"numberOfAddsPerLaunch\": 10\n  }\n}",
+        "options": {}
+      },
+      "name": "PhantomBuster API2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        2020,
+        -80
+      ],
+      "id": "96a8afff-7970-4cc4-81d1-cb4c3ce0ab92",
+      "alwaysOutputData": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "JPRVimg3l6LeUWWa",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.phantombuster.com/api/v2/agents/launch",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Phantombuster-Key-1",
+              "value": "4JbLcAva32LigntGNLRUmHH4VlbHSnFAlSMmggQau80"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"id\": \"1401678671271821\",\n  \"argument\": {\n    \"userAgent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36\",\n    \"identityId\": \"8886207158112012\",\n    \"emailChooser\": \"phantombuster\",\n    \"sessionCookie\": \"AQEFAREBAAAAABVnZngAAAGWZ-j96wAAAZcCd5P8VgAAtHVybjpsaTplbnRlcnByaXNlQXV0aFRva2VuOmVKeGpaQUFDeWR3clRDQmEydko1R29oVzJMdDJFeU9JVVg0Ny9qT1lFZTAxK3pFREl3REM3QW9GXnVybjpsaTplbnRlcnByaXNlUHJvZmlsZToodXJuOmxpOmVudGVycHJpc2VBY2NvdW50OjQyNjYyODA5OCw0NTY3Nzk2MjIpXnVybjpsaTptZW1iZXI6MTQzODE0NzExMiZzabiMEbEIxbLmwZdUarizXKEFPXgqB7NFUNCsx9JVLQfB21FFkhOgvhizDsQ74mpX_DqEchBAXsJF6j4pOa_GW3nfEM_U8bUHTP4jW-lxANokf2yUkU_cvk7CYu-coTzHFWr5VKTwY1Mn-CHUhdC_TE8lfQYxbx8CyfZeBAWPkaF-n5JV0vbwTOKZ4T4PmlVXCEI\",\n    \"spreadsheetUrl\": \"{{ $('Limit').item.json['LinkedIn URL'] }}\",\n    \"pushResultToCRM\": true,\n    \"enrichWithCompanyData\": true,\n    \"numberOfAddsPerLaunch\": 10\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        580,
+        -180
+      ],
+      "id": "36fbb862-aee1-4ca9-a1f6-362bfc504582",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "xF7zKCVvqvZ9Xdof",
+          "name": "Header Auth account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getOutput",
+        "agentId": "1401678671271821",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.phantombuster",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        -180
+      ],
+      "id": "94a229b2-f4d1-4c24-bd53-f9022a9009c2",
+      "name": "Phantombuster",
+      "alwaysOutputData": true,
+      "credentials": {
+        "phantombusterApi": {
+          "id": "vNFE9XJrlL7ADQXz",
+          "name": "Phantombuster account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 3,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        780,
+        -180
+      ],
+      "id": "b7ad0722-7f1f-497b-8a6c-893e23a64586",
+      "name": "Wait1",
+      "webhookId": "89214817-a73c-40db-8038-d3d3023069ef"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        260,
+        -180
+      ],
+      "id": "37885802-963f-40c0-8818-f6aa876ae287",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "maxItems": 3
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -180
+      ],
+      "id": "b47a5507-413b-451a-b01e-c5226a360dc9",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1EIOjohCLDHQTK9g3TnzYJHjZ1oLsysWw_4_7ggxpB6k",
+          "mode": "list",
+          "cachedResultName": "n8nQaApplication",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1EIOjohCLDHQTK9g3TnzYJHjZ1oLsysWw_4_7ggxpB6k/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1488729431,
+          "mode": "list",
+          "cachedResultName": "LinkedInNewConnection",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1EIOjohCLDHQTK9g3TnzYJHjZ1oLsysWw_4_7ggxpB6k/edit#gid=1488729431"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name": "={{ $('Limit').item.json.Name }}",
+            "LinkedIn URL": "={{ $('Limit').item.json['LinkedIn URL'] }}",
+            "Occupation": "={{ $('Limit').item.json.Occupation }}",
+            "Status": "={{ $('Loop Over Items').item.json.nextMessage }} sent",
+            "Counter": "={{ Math.min(3, (parseInt($('Loop Over Items').item.json.Counter) || 0) + 1) }}",
+            "Next follow up date": "={{ $('Limit').item.json['New Next Follow Up Date'] }}",
+            "row_number": "={{ $('Limit').item.json.row_number }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "LinkedIn URL",
+              "displayName": "LinkedIn URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Occupation",
+              "displayName": "Occupation",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Counter",
+              "displayName": "Counter",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Next follow up date",
+              "displayName": "Next follow up date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "name": "Update Lead Magnet Status1",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        2340,
+        -60
+      ],
+      "id": "537acb68-2eff-47ec-93ef-4a16be16d4a1",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "CmAkoxRketJyyE6c",
+          "name": "PoojaPalSheet"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI2": {
+      "main": [
+        [
+          {
+            "node": "PhantomBuster API2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "lead magnet": {
+      "main": [
+        [
+          {
+            "node": "OpenAI2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI": {
+      "main": [
+        [
+          {
+            "node": "lead magnet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PhantomBuster API2": {
+      "main": [
+        [
+          {
+            "node": "Update Lead Magnet Status1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "Phantombuster",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Phantombuster": {
+      "main": [
+        [
+          {
+            "node": "OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Lead Magnet Status1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "68b4c450-a0bc-49fa-b0cf-55ca29a0f60a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4d949202a47676d698bdba96f7bba429e957dcc21ec266fbc40ef128cf210368"
+  },
+  "id": "EG2aXuPlDTYFxV6R",
+  "tags": []
+}
