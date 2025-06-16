@@ -1,0 +1,235 @@
+{
+  "name": "Identifying the use of image by using flask application",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://0c2b-34-70-187-228.ngrok-free.app/embed",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"product_name\": \"{{ $json.NAME }}\",\n  \"product_details\": \"{{ $json.DESCRIPTION }}\",\n  \"product_price\": \"{{ $json.PRICE }}\",\n  \"image_url\": \"{{ $json['IMAGE URL'] }}\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -60,
+        0
+      ],
+      "id": "6265ef51-53ac-4b42-8d52-1955e028f253",
+      "name": "HTTP Request - Get Embedding"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://ajhwlpmgfkfelbujhfsf.supabase.co/rest/v1/product_vectors",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFqaHdscG1nZmtmZWxidWpoZnNmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDM2ODE5NCwiZXhwIjoyMDU5OTQ0MTk0fQ.5rXcw07uKb3-978CB-j9KwKTVtllY2lXxFzTpH-nt2M"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFqaHdscG1nZmtmZWxidWpoZnNmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDM2ODE5NCwiZXhwIjoyMDU5OTQ0MTk0fQ.5rXcw07uKb3-978CB-j9KwKTVtllY2lXxFzTpH-nt2M"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"product_name\": \"{{ $json.product_data.product_name }}\",\n  \"product_details\": \"{{ $json.product_data.product_details }}\",\n  \"product_price\": \"{{ $json.product_data.product_price }}\",\n  \"image_url\": \"{{ $json.product_data.image_url }}\",\n  \"embedding\": {{ JSON.stringify($json.embedding) }}\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        140,
+        0
+      ],
+      "id": "6ba3fadb-0dcd-49f7-893d-4d93f8239c0b",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://0c2b-34-70-187-228.ngrok-free.app/search-embed",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"query\": \"https://m.media-amazon.com/images/I/61ribu0MngL._AC_SX679_.jpg\",\n  \"question\" : \"what is the price of this product?\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        460,
+        0
+      ],
+      "id": "27e7fc7e-135e-4de0-9ca2-49214c51845c",
+      "name": "HTTP Request - Get Embedding1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": " https://ajhwlpmgfkfelbujhfsf.supabase.co/rest/v1/rpc/match_products",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFqaHdscG1nZmtmZWxidWpoZnNmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDM2ODE5NCwiZXhwIjoyMDU5OTQ0MTk0fQ.5rXcw07uKb3-978CB-j9KwKTVtllY2lXxFzTpH-nt2M"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFqaHdscG1nZmtmZWxidWpoZnNmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDM2ODE5NCwiZXhwIjoyMDU5OTQ0MTk0fQ.5rXcw07uKb3-978CB-j9KwKTVtllY2lXxFzTpH-nt2M"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"query_embedding\": {{ $('HTTP Request - Get Embedding').item.json.embedding }},\n  \"match_threshold\": 0.50,\n  \"match_count\": 1\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        840,
+        0
+      ],
+      "id": "6ca2a0ff-e8a2-4170-a49c-9b157be7ba77",
+      "name": "HTTP Request2"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1VT2ZuQ74C0r9VcqrWuFmWwnfTCGsqE62iym9__0Fxgs/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1VT2ZuQ74C0r9VcqrWuFmWwnfTCGsqE62iym9__0Fxgs/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -240,
+        0
+      ],
+      "id": "6ddbab35-15c6-4fe4-ab95-86e7224376ba",
+      "name": "Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "eSWvoynFZTbuFsvm",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -400,
+        0
+      ],
+      "id": "16f6ca8f-6a39-45b9-97e7-a6ae07576d37",
+      "name": "When clicking ‘Test workflow’"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "HTTP Request - Get Embedding": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request - Get Embedding1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request - Get Embedding",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request2": {
+      "main": [
+        []
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request - Get Embedding1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Test workflow’": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c51c00cf-9afe-495e-bf1c-8153427f4858",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "611902a1953abc0677a799f441cd3d3ed7a667ad75821dbebd90e882ae27e3df"
+  },
+  "id": "JlK83cDgThg0sG3f",
+  "tags": []
+}
