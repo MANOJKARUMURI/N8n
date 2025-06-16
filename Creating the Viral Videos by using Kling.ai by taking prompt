@@ -1,0 +1,352 @@
+{
+  "name": "Create Viral AI Videos Automated With N8n Agent , chaptgpt and Kling by Adrian Viral AI marketing",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -600,
+        -80
+      ],
+      "id": "10e6a06f-f529-4870-9246-f4adc64ef03b",
+      "name": "When clicking ‘Test workflow’"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/19Rb1KMAcUqr0wuff_8h3bkbfpYwoHkWchksRmteFZKE/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/19Rb1KMAcUqr0wuff_8h3bkbfpYwoHkWchksRmteFZKE/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Status",
+              "lookupValue": "todo"
+            }
+          ]
+        },
+        "options": {
+          "returnFirstMatch": true
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -380,
+        -80
+      ],
+      "id": "45411f75-af5e-4b69-92b2-7f5ec1b2bd1f",
+      "name": "Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "33EzGE3DBPO8UtV6",
+          "name": "Google Sheets account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 30
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        60,
+        -80
+      ],
+      "id": "18de5b33-d671-48c4-82fd-6e99449e66a1",
+      "name": "Wait",
+      "webhookId": "7288c8e1-c781-47e0-b9ed-f179fad87657"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.piapi.ai/api/v1/task",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"Qubico/hunyuan\",\n  \"task_type\": \"txt2video\",\n  \"input\": {\n    \"prompt\": \"{{ $('Google Sheets').item.json['Video Prompt'] }}\",\n    \"image_url\": \"{{ $json.url }}\"\n  },\n  \"config\": {\n    \"webhook_config\": {\n      \"endpoint\": \"\",\n      \"secret\": \"\"\n    }\n  }\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        300,
+        -80
+      ],
+      "id": "0d36534c-b486-4baa-b1f9-5eef86ab3363",
+      "name": "generate Video",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "N0zXFK1DTS1R2cwQ",
+          "name": "Header Auth account 21"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 3,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        560,
+        -80
+      ],
+      "id": "132a73fa-8854-4540-b62d-27ae032f4c93",
+      "name": "Wait1",
+      "webhookId": "50071903-5ea9-4aab-97ef-29d1d0ec9d49"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.piapi.ai/api/v1/task/{{ $json.data.task_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        800,
+        -80
+      ],
+      "id": "5eb1c852-7b07-40d8-b0fe-281c09d8a960",
+      "name": "get video",
+      "alwaysOutputData": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "9jZOAm3NT89AkTXb",
+          "name": "Header Auth account 22"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/19Rb1KMAcUqr0wuff_8h3bkbfpYwoHkWchksRmteFZKE/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/19Rb1KMAcUqr0wuff_8h3bkbfpYwoHkWchksRmteFZKE/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "URL": "={{ $json.data.output.video_url }}",
+            "row_number": "={{ $('Google Sheets').item.json.row_number }}",
+            "Status": "={{ $json.data.status }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Prompt",
+              "displayName": "Prompt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Caption",
+              "displayName": "Caption",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Video Prompt",
+              "displayName": "Video Prompt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "URL",
+              "displayName": "URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1020,
+        -80
+      ],
+      "id": "262e7c59-be93-4327-8aab-0e36be059d0f",
+      "name": "Google Sheets1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "eSWvoynFZTbuFsvm",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "prompt": "=\"You are an AI assistant. Your task is to generate a detailed and accurate image based on the following prompt: {{ $json.Prompt }}. Return only the direct URL of the generated image as the output.\"",
+        "options": {
+          "returnImageUrls": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -160,
+        -80
+      ],
+      "id": "9baed47a-a209-412d-ad40-dc93e0dc9268",
+      "name": "OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "bcuzJ7cJSlw6l4UX",
+          "name": "OpenAi account 9"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Test workflow’": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "generate Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "generate Video": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "get video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get video": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "54b60ae0-a11e-4d33-bb2b-d50ccf04095b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "611902a1953abc0677a799f441cd3d3ed7a667ad75821dbebd90e882ae27e3df"
+  },
+  "id": "1SYYzXDIf8dSuq7O",
+  "tags": []
+}
