@@ -1,0 +1,419 @@
+{
+  "name": "appointment setter",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "messages"
+        ]
+      },
+      "type": "n8n-nodes-base.whatsAppTrigger",
+      "typeVersion": 1,
+      "position": [
+        20,
+        -40
+      ],
+      "id": "0eae5096-888f-43de-870b-6bf10878cc3c",
+      "name": "WhatsApp Trigger",
+      "webhookId": "10738d63-2f74-4813-9fc5-a161e5b7b2eb",
+      "credentials": {
+        "whatsAppTriggerApi": {
+          "id": "0V4RSLiX1Ng6yuTi",
+          "name": "WhatsApp OAuth account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "={{ $('WhatsApp Trigger').item.json.metadata.phone_number_id }}",
+        "recipientPhoneNumber": "={{ $('WhatsApp Trigger').item.json.contacts[0].wa_id }}",
+        "textBody": "={{ $json.output }}",
+        "additionalFields": {},
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1,
+      "position": [
+        960,
+        -40
+      ],
+      "id": "236fe54b-4684-4f8e-974c-cd12425d1515",
+      "name": "WhatsApp Business Cloud",
+      "webhookId": "191737c5-8073-4217-9f0c-9988d1780294",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "xGb4UJLL7yI0jSND",
+          "name": "WhatsApp account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        60,
+        220
+      ],
+      "id": "8e316029-208f-4bb9-8d63-8762eef61701",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "euVUAxIlEszylfQO",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('WhatsApp Trigger').item.json.messages[0].from }}",
+        "contextWindowLength": 20
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        200,
+        240
+      ],
+      "id": "7a88db7f-f588-485f-91b8-ef838dcd1557",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "907ddad216d4e161e91843f2101d709ae1dc9297eff1e91057e665a87fe02f17@group.calendar.google.com",
+          "mode": "list",
+          "cachedResultName": "Appointement Booking"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        320,
+        220
+      ],
+      "id": "97f5854f-3387-4b6c-9f10-a50232de57d3",
+      "name": "Read Calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "joGDxjjBUSiCrvXk",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "907ddad216d4e161e91843f2101d709ae1dc9297eff1e91057e665a87fe02f17@group.calendar.google.com",
+          "mode": "list",
+          "cachedResultName": "Appointement Booking"
+        },
+        "start": "={{ $fromAI (\"start\",\"date and time for when the event should start\") }}",
+        "end": "={{ $fromAI(\"end\",\"date and time for when the event should end\") }}",
+        "additionalFields": {
+          "summary": "={{ $fromAI(\"title\",\"title of the event\") }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        440,
+        220
+      ],
+      "id": "8cd06b9e-223b-4c0c-b376-6c85b46a9a8e",
+      "name": "Create Calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "joGDxjjBUSiCrvXk",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "calendar": {
+          "__rl": true,
+          "value": "907ddad216d4e161e91843f2101d709ae1dc9297eff1e91057e665a87fe02f17@group.calendar.google.com",
+          "mode": "list",
+          "cachedResultName": "Appointement Booking"
+        },
+        "eventId": "={{ $fromAI(\"id\",\"the id of the event\") }} ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        560,
+        220
+      ],
+      "id": "1c60e7cc-f343-495e-9bd2-28c961791c02",
+      "name": "Delete Calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "joGDxjjBUSiCrvXk",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $fromAI(\"email\",\"the email address of the user gave you  earlier\") }}",
+        "subject": "={{ $fromAI(\"subject\",\"the email subjectline that just is [New  Booking] + Booking date and time converted to the user  timezone that he mentioned earlier'\") }}",
+        "message": "={{ $fromAI(\"body\",\"the email body that contains the message  that the booking of the user was confirmed along with booking  date, email, name, timezone, what user wants to discuss during  the appointment\") }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        1180,
+        200
+      ],
+      "id": "208057c8-6d50-4fd0-85a7-db875def83a8",
+      "name": "Gmail",
+      "webhookId": "beeb8f93-25be-42d1-a17e-06dc851eeef6"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        400,
+        -40
+      ],
+      "id": "edf9ffb5-85a4-4fdc-8a8c-a9cbd2e835c7",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.5,
+      "position": [
+        820,
+        220
+      ],
+      "id": "bcb541f4-5e97-4d69-837d-5a69e7cc7ce4",
+      "name": "Google Sheets1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "33EzGE3DBPO8UtV6",
+          "name": "Google Sheets account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.5,
+      "position": [
+        680,
+        220
+      ],
+      "id": "c7da57c6-aac4-4ea0-a62d-bda925c9b1e3",
+      "name": "Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "33EzGE3DBPO8UtV6",
+          "name": "Google Sheets account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.5,
+      "position": [
+        960,
+        220
+      ],
+      "id": "58e67545-44b9-49cd-9f93-55d3e1ba3174",
+      "name": "Google Sheets2",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "33EzGE3DBPO8UtV6",
+          "name": "Google Sheets account 4"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "WhatsApp Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "WhatsApp Business Cloud",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets2": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "856433d1-8fb7-43a1-8bc5-0ce0a4e9f1b9",
+  "meta": {
+    "instanceId": "611902a1953abc0677a799f441cd3d3ed7a667ad75821dbebd90e882ae27e3df"
+  },
+  "id": "KcB0ymiZHmcafiIt",
+  "tags": []
+}
